@@ -1,39 +1,50 @@
-int sensorPin = 2;
-float periyot;
-float frekans;
-//Motor pinleri
-int in1 = 6;
-int in2 = 7;
-int ena = 9;
-//Led Pini
+int encoder_pin = 2;
 int led = 8;
-void setup() {
-  // put your setup code here, to run once:
-  pinMode(sensorPin, INPUT);
-  pinMode(4, OUTPUT);
-  Serial.begin(9600);
-  pinMode(in1, OUTPUT);
-  pinMode(in2, OUTPUT);
-  pinMode(ena, OUTPUT);
-  pinMode(led, OUTPUT);
+int motor1 = 6;
+int motor2 = 7;
+int motorpwm = 9;
+int sayac = 0;
+int rpm;
+unsigned long ilkzaman;
+unsigned long sonzaman;
+double periyot = 0;
+unsigned long yaz = 0;
+
+void counter()
+{
+  periyot = millis() - ilkzaman;
+  digitalWrite(led, HIGH);
+  delayMicroseconds(100);
+  digitalWrite(led, LOW);
+  ilkzaman = millis();
 }
 
-void loop() {
-  //Motor kısmı
-  analogWrite(ena, 150);
-  digitalWrite(in1, HIGH);
-  digitalWrite(in2, LOW);
-  //RPM Okuma
-  int sensorDurum = digitalRead(sensorPin);
-  periyot = (float)pulseIn(sensorPin, HIGH);
-  frekans = 1000 / periyot;
-  Serial.println("Frekans:");
-  Serial.println(frekans);
-  Serial.println("RPM:");
-  Serial.println(frekans * 60);
-  digitalWrite(led, HIGH);
-  int per1 = (int)periyot;
-  delay(per1);
-  digitalWrite(led, LOW);
-  delay(per1);
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(encoder_pin, INPUT);
+  pinMode(led, OUTPUT);
+  pinMode(motor1, OUTPUT);
+  pinMode(motor2, OUTPUT);
+  pinMode(motorpwm, OUTPUT);
+
+  analogWrite(motorpwm, 180);
+  digitalWrite(motor1, HIGH);
+  digitalWrite(motor2, LOW);
+  attachInterrupt(0, counter, FALLING);
+  ilkzaman = 0;
+
+}
+void loop()
+{
+
+//int sensorDurum = digitalRead(encoder_pin);
+//periyot = (float)pulseIn(encoder_pin, LOW);
+//  if ((millis() - yaz) > 1000){
+//    detachInterrupt(0);
+//    Serial.print("RPM= ");
+//    Serial.println(periyot);
+//    yaz = millis();
+//    attachInterrupt(0, counter, FALLING);
+//    }
 }
