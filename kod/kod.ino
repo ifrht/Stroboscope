@@ -37,8 +37,10 @@ void setup() {
   pinMode(motorBckwrd, OUTPUT);
   pinMode(motorPWM, OUTPUT);
   //Motor Başlatma
+  analogWrite(motorPWM, 150);
   digitalWrite(motorFrwrd, HIGH);
   digitalWrite(motorBckwrd, LOW);
+
 }
 
 //LED Kontrol Fonksiyonları
@@ -117,9 +119,6 @@ void loop() {
     }
   }
 
-  //Motor Hız Kontrolü
-  analogWrite(motorPWM, hiz);
-
   //Haberleşme
   if (Serial.available() > 0) {
     gelenVeri = Serial.read();
@@ -157,7 +156,8 @@ void loop() {
     else if (gelenVeri <= 57 && gelenVeri >= 48)
     {
       hiz = map(gelenVeri, 48, 57, 80, 255);
-      Serial.println(hiz);
+      //Motor Hız Kontrolü
+      analogWrite(motorPWM, hiz);
     }
     else if (gelenVeri == 115)
     {
