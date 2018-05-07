@@ -1,10 +1,17 @@
+//Sensör Değişkenleri
 int sensor_pin = 2;
 int sensor_durum;
+
+//LED Değişkeni
 int pwr_led = 3;
+
+//Motor Değişkenleri
 int motorFrwrd = 13;
 int motorBckwrd = 12;
 int motorPWM = 11;
 int hiz = 150;
+
+//Hesaplama Değişkenleri
 double rpm;
 int periyot;
 double periyot_sag;
@@ -12,25 +19,29 @@ double periyot_sol;
 unsigned long simdiki_zaman;
 unsigned long onceki_zaman = 0;
 int sayac = 0;
-int yazma = 0;
 int gelenVeri;
 int degisken = 0;
 int x;
 double gecikme = 0;
-int cevir;
 int kontrol = 1;
 
 void setup() {
+  //Haberleşmeyi başlatmak için kullanıldı. Baud Rate = 9600.
   Serial.begin(9600);
+  //Sensör Giriş Pini
   pinMode(sensor_pin, INPUT);
+  //LED Kontrol Pini
   pinMode(pwr_led, OUTPUT);
+  //Motor Pinleri
   pinMode(motorFrwrd, OUTPUT);
   pinMode(motorBckwrd, OUTPUT);
   pinMode(motorPWM, OUTPUT);
+  //Motor Başlatma
   digitalWrite(motorFrwrd, HIGH);
   digitalWrite(motorBckwrd, LOW);
 }
 
+//LED Kontrol Fonksiyonları
 void yak(int yakKontrol) {
   if (yakKontrol == 1) {
     delay(periyot * gecikme);
@@ -95,19 +106,18 @@ void loop() {
   sensor_durum = digitalRead(sensor_pin);
   if (sensor_durum == degisken) {
     sayac++;
-    degisken = !degisken;
-    x = sayac % 2;
+    degisken = !degisken; //Sensörden gelen veri düzensiz olduğu için bu işlemler yapılmıştır.
+    x = sayac % 2;        //Her geçişte sensör 2 pulse üretmektedir, bunu tek bir pulse'a çevirmek için bu işlemler yapılmıştır.
     if (x == 0) {
       simdiki_zaman = millis();
       periyot = simdiki_zaman - onceki_zaman;
-      //    Serial.println(periyot);
+      //Serial.println(periyot);
       onceki_zaman = millis();
-      
       yak(kontrol);
     }
   }
 
-  //Motor Hızı
+  //Motor Hız Kontrolü
   analogWrite(motorPWM, hiz);
 
   //Haberleşme
@@ -159,6 +169,7 @@ void loop() {
       digitalWrite(motorFrwrd, HIGH);
       digitalWrite(motorBckwrd, LOW);
     }
+    //Geçici kod, sayıların yerlerini daha hassah bulmak için kullanıldı.
     else if (gelenVeri == 43)
     {
       gecikme = gecikme + 0.01;
@@ -166,6 +177,7 @@ void loop() {
       Serial.println(periyot);
       Serial.println(periyot * gecikme);
     }
+    //Geçici kod, sayıların yerlerini daha hassah bulmak için kullanıldı.
     else if (gelenVeri == 45)
     {
       gecikme = gecikme - 0.01;
