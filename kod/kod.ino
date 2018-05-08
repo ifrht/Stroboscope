@@ -1,14 +1,18 @@
+//LCD'ye ait kütüphane eklendi ve pinler tanımlandı.
+#include <LiquidCrystal.h>
+LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+
 //Sensör Değişkenleri
-int sensor_pin = 2;
+int sensor_pin = 6;
 int sensor_durum;
 
 //LED Değişkeni
-int pwr_led = 3;
+int pwr_led = 7;
 
 //Motor Değişkenleri
 int motorFrwrd = 13;
-int motorBckwrd = 12;
-int motorPWM = 11;
+int motorBckwrd = 8;
+int motorPWM = 9;
 int hiz = 150;
 
 //Hesaplama Değişkenleri
@@ -24,10 +28,14 @@ int degisken = 0;
 int x;
 double gecikme = 0;
 int kontrol = 1;
+int eski_periyot;
+int konum = 1;
 
 void setup() {
   //Haberleşmeyi başlatmak için kullanıldı. Baud Rate = 9600.
   Serial.begin(9600);
+  //LCD ayarı
+  lcd.begin(16, 2);
   //Sensör Giriş Pini
   pinMode(sensor_pin, INPUT);
   //LED Kontrol Pini
@@ -48,7 +56,7 @@ void yak(int yakKontrol) {
   if (yakKontrol == 1) {
     delay(periyot * gecikme);
     digitalWrite(pwr_led, HIGH);
-    delayMicroseconds(50);
+    delayMicroseconds(300);
     digitalWrite(pwr_led, LOW);
   }
 
@@ -56,10 +64,10 @@ void yak(int yakKontrol) {
     periyot_sag = periyot_sag + 0.5;
     delay(periyot_sag);
     digitalWrite(pwr_led, HIGH);
-    delayMicroseconds(50);
+    delayMicroseconds(300);
     digitalWrite(pwr_led, LOW);
-    if (periyot_sag >= 2 * periyot) {
-      periyot_sag = periyot;
+    if (periyot_sag >= periyot) {
+      periyot_sag = 0;
     }
 
   }
@@ -67,41 +75,13 @@ void yak(int yakKontrol) {
     periyot_sol = periyot_sol - 0.5;
     delay(periyot_sol);
     digitalWrite(pwr_led, HIGH);
-    delayMicroseconds(50);
+    delayMicroseconds(300);
     digitalWrite(pwr_led, LOW);
     if (periyot_sol <= 1) {
       periyot_sol = periyot;
     }
   }
 }
-
-//void sagaCevir() {
-//  periyot_sag = periyot;
-//  while (periyot_sag <= periyot * 2) {
-//    delay(periyot_sag);
-//    digitalWrite(pwr_led, HIGH);
-//    delayMicroseconds(50);
-//    digitalWrite(pwr_led, LOW);
-//    periyot_sag = periyot_sag + 0.5;
-//  }
-//  if (gelenVeri == 101) {
-//    sagaCevir();
-//  }
-//}
-//
-//void solaCevir() {
-//  periyot_sol = periyot;
-//  while (periyot_sol >= 0) {
-//    delay(periyot_sol);
-//    digitalWrite(pwr_led, HIGH);
-//    delayMicroseconds(50);
-//    digitalWrite(pwr_led, LOW);
-//    periyot_sol = periyot_sol - 0.5;
-//  }
-//  if (gelenVeri == 102) {
-//    solaCevir();
-//  }
-//}
 
 void loop() {
 
@@ -112,9 +92,12 @@ void loop() {
     x = sayac % 2;        //Her geçişte sensör 2 pulse üretmektedir, bunu tek bir pulse'a çevirmek için bu işlemler yapılmıştır.
     if (x == 0) {
       simdiki_zaman = millis();
+      eski_periyot = periyot;
       periyot = simdiki_zaman - onceki_zaman;
-      //Serial.println(periyot);
       onceki_zaman = millis();
+      if (eski_periyot - periyot <= 2 && eski_periyot - periyot >= -2 ) {
+        periyot = eski_periyot;
+      }
       yak(kontrol);
     }
   }
@@ -127,35 +110,39 @@ void loop() {
     {
       gecikme = 0;
       kontrol = 1;
+      konum = 1;
     }
     else if (gelenVeri == 98)
     {
       gecikme = 0.25;
       kontrol = 1;
+      konum = 2;
     }
     else if (gelenVeri == 99)
     {
       gecikme = 0.5;
       kontrol = 1;
+      konum = 3;
     }
     else if (gelenVeri == 100)
     {
       gecikme = 0.75;
       kontrol = 1;
+      konum = 4;
     }
     else if (gelenVeri == 101)
     {
       kontrol = 2;
-      periyot_sag = periyot;
+      periyot_sag = 0;
     }
     else if (gelenVeri == 102)
     {
       kontrol = 3;
       periyot_sol = periyot;
     }
-    else if (gelenVeri <= 57 && gelenVeri >= 48)
+    else if (gelenVeri <= 9 && gelenVeri >= 0)
     {
-      hiz = map(gelenVeri, 48, 57, 80, 255);
+      hiz = map(gelenVeri, 0, 9, 80, 255);
       //Motor Hız Kontrolü
       analogWrite(motorPWM, hiz);
     }
@@ -169,22 +156,16 @@ void loop() {
       digitalWrite(motorFrwrd, HIGH);
       digitalWrite(motorBckwrd, LOW);
     }
-    //Geçici kod, sayıların yerlerini daha hassah bulmak için kullanıldı.
-    else if (gelenVeri == 43)
+    else if (gelenVeri == 121)
     {
-      gecikme = gecikme + 0.01;
-      Serial.println(gecikme);
-      Serial.println(periyot);
-      Serial.println(periyot * gecikme);
-    }
-    //Geçici kod, sayıların yerlerini daha hassah bulmak için kullanıldı.
-    else if (gelenVeri == 45)
-    {
-      gecikme = gecikme - 0.01;
-      Serial.println(gecikme);
-      Serial.println(periyot);
-      Serial.println(periyot * gecikme);
+      //LCD'ye yazdırma işlemi yazma komutu gelince yapılıyor.
+      //loop döngüsü içinde yazıldığında sistemde gecikmelere sebep oluyor.
+      lcd.clear();
+      lcd.print("Konum: ");
+      lcd.print(konum);
+      lcd.setCursor(0, 1);
+      lcd.print("RPM: ");
+      lcd.print(60000 / periyot);
     }
   }
-
 }
