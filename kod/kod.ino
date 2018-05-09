@@ -1,4 +1,3 @@
-//LCD'ye ait kütüphane eklendi ve pinler tanımlandı.
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
@@ -15,6 +14,9 @@ int motorBckwrd = 8;
 int motorPWM = 9;
 int hiz = 150;
 
+//Buck Converter Pulse
+int buck = 10;
+
 //Hesaplama Değişkenleri
 double rpm;
 int periyot;
@@ -30,12 +32,19 @@ double gecikme = 0;
 int kontrol = 1;
 int eski_periyot;
 int konum = 1;
+unsigned long lcd_sayac = 0;
 
 void setup() {
   //Haberleşmeyi başlatmak için kullanıldı. Baud Rate = 9600.
   Serial.begin(9600);
-  //LCD ayarı
+  //LCD
   lcd.begin(16, 2);
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Power Electronic");
+  lcd.setCursor(0, 1);
+  lcd.print("Design Project");
+
   //Sensör Giriş Pini
   pinMode(sensor_pin, INPUT);
   //LED Kontrol Pini
@@ -48,7 +57,8 @@ void setup() {
   analogWrite(motorPWM, 150);
   digitalWrite(motorFrwrd, HIGH);
   digitalWrite(motorBckwrd, LOW);
-
+  pinMode(buck, OUTPUT);
+  tone(buck,1000);
 }
 
 //LED Kontrol Fonksiyonları
@@ -84,7 +94,6 @@ void yak(int yakKontrol) {
 }
 
 void loop() {
-
   sensor_durum = digitalRead(sensor_pin);
   if (sensor_durum == degisken) {
     sayac++;
@@ -105,7 +114,6 @@ void loop() {
   //Haberleşme
   if (Serial.available() > 0) {
     gelenVeri = Serial.read();
-    Serial.println(gelenVeri);
     if (gelenVeri == 97)
     {
       gecikme = 0;
@@ -142,14 +150,14 @@ void loop() {
     }
     else if (gelenVeri <= 9 && gelenVeri >= 0)
     {
-      hiz = map(gelenVeri, 0, 9, 80, 255);
+      hiz = map(gelenVeri, 0, 9, 20, 200);
       //Motor Hız Kontrolü
       analogWrite(motorPWM, hiz);
     }
     else if (gelenVeri == 115)
     {
       digitalWrite(motorFrwrd, LOW);
-      digitalWrite(motorBckwrd, LOW);
+      digitalWrite(motorBckwrd, HIGH);
     }
     else if (gelenVeri == 114)
     {
@@ -158,9 +166,8 @@ void loop() {
     }
     else if (gelenVeri == 121)
     {
-      //LCD'ye yazdırma işlemi yazma komutu gelince yapılıyor.
-      //loop döngüsü içinde yazıldığında sistemde gecikmelere sebep oluyor.
       lcd.clear();
+      lcd.setCursor(0, 0);
       lcd.print("Konum: ");
       lcd.print(konum);
       lcd.setCursor(0, 1);
